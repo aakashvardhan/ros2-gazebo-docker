@@ -1,0 +1,41 @@
+# Docker Compose -- ROS 2 Jazzy + Gazebo Harmonic
+# Mac-specific X11 forwarding setup
+# macOS doesnt have a native X server, instead XQuartz is used
+# This listens on a TCP socket. The container connects to it via host.docker.internal:0
+
+services:
+  ros2:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ros2_gazebo
+
+    # --privileged: needed for GPU passthrough hints and /dev access.
+    privileged: true
+
+    environment:
+      - DISPLAY=${DISPLAY}
+      - TURTLEBOT3_MODEL=burger
+      - ROS_DOMAIN_ID=0
+      - LIBGL_ALWAYS_SOFTWARE=1
+      - QT_X11_NO_MITSHM=1
+
+    # Keep container alive for interactive use
+    stdin_open: true
+    tty: true
+
+    # Network mode host: simplifies DDS discovery (ROS 2 nodes find each other)
+    # network_mode: host
+    ports:
+      - "5901:5901"
+
+    volumes:
+      # Mount a local workspace folder for your custom packages
+      - ./workspace:/root/ros2_ws/src
+
+      # Persist Gazebo model cache so you dont redownload models every restart
+      - gz_cache:/root/.gz
+
+volumes:
+  gz_cache:
