@@ -1,13 +1,13 @@
 # ROS 2 + Gazebo, Containerized
 
 A reproducible robotics simulation environment: **ROS 2 Jazzy**, **Gazebo Harmonic**,
-RViz2, rqt, and a TurtleBot3 model, in one image that behaves the same on macOS and
+RViz2, rqt, and a TurtleBot3 model, in one image that runs the same on macOS and
 Linux.
 
 Getting ROS 2 and Gazebo running locally usually means matching an Ubuntu release to
 a ROS distro to a Gazebo version, then getting GUI applications out of the container
-and onto your screen. On a Mac there is no native X server at all. This repo makes
-that a `docker compose up`.
+and onto your screen. On a Mac there is no native X server at all. This repo reduces
+all of that to `docker compose up`.
 
 ---
 
@@ -15,8 +15,8 @@ that a `docker compose up`.
 
 | | |
 |---|---|
-| **ROS 2 Jazzy** | `osrf/ros:jazzy-desktop` — includes RViz2, rqt, demo nodes |
-| **Gazebo Harmonic** | via `ros-jazzy-ros-gz`, the ROS 2 ↔ Gazebo bridge |
+| **ROS 2 Jazzy** | `osrf/ros:jazzy-desktop`, which includes RViz2, rqt, and demo nodes |
+| **Gazebo Harmonic** | via `ros-jazzy-ros-gz`, the bridge between ROS 2 and Gazebo |
 | **TurtleBot3** | description, Gazebo worlds, Nav2 stack, and teleop |
 | **A desktop** | XFCE over VNC on port 5901, so GUI tools work without an X server |
 | **Persistent model cache** | Gazebo models survive restarts instead of re-downloading |
@@ -59,8 +59,8 @@ Two options, depending on your setup.
 ### VNC (works everywhere, nothing to install on the host)
 
 The container runs an XFCE desktop on **port 5901**. Connect any VNC client to
-`localhost:5901` — password `password`. On macOS, Finder → Go → Connect to Server →
-`vnc://localhost:5901` works with no extra software.
+`localhost:5901` with the password `password`. On macOS, Finder > Go > Connect to
+Server > `vnc://localhost:5901` works with no extra software.
 
 This is the path to use if X11 forwarding is being difficult.
 
@@ -77,8 +77,8 @@ xhost + 127.0.0.1
 Desktop's DNS name for the host. On Linux, set `DISPLAY=$DISPLAY` and mount
 `/tmp/.X11-unix` instead.
 
-`LIBGL_ALWAYS_SOFTWARE=1` is set in `docker-compose.yml`: without GPU passthrough,
-Gazebo's renderer falls back to software rasterization. That is slower but it
+`docker-compose.yml` sets `LIBGL_ALWAYS_SOFTWARE=1`. Without GPU passthrough,
+Gazebo's renderer falls back to software rasterization. That is slower, but it
 actually starts, which hardware GL in a container often does not.
 
 ---
@@ -95,8 +95,8 @@ cd /root/ros2_ws && colcon build && source install/setup.bash
 ```
 
 The entrypoint sources `/opt/ros/jazzy/setup.bash` on every shell, and sources your
-workspace overlay too once `install/setup.bash` exists — so `ros2` and your own
-nodes are on the path in every new terminal without any manual sourcing.
+workspace overlay too once `install/setup.bash` exists. Both `ros2` and your own
+nodes land on the path in every new terminal with no manual sourcing.
 
 ---
 
@@ -114,12 +114,12 @@ nodes are on the path in every new terminal without any manual sourcing.
 
 ## Notes
 
-- `TURTLEBOT3_MODEL=burger` by default — the two-wheel differential drive model,
-  the quickest to spawn and debug. `waffle` and `waffle_pi` also ship with the image.
-- `ROS_DOMAIN_ID=0` is set explicitly rather than left to the default, so DDS traffic
-  doesn't collide with other ROS 2 machines on the same network.
-- The container runs `--privileged` for `/dev` access, which is what you want when
+- `TURTLEBOT3_MODEL=burger` by default. That is the two-wheel differential drive
+  model, the quickest to spawn and debug. `waffle` and `waffle_pi` ship too.
+- The Dockerfile sets `ROS_DOMAIN_ID=0` explicitly rather than leaving it to the
+  default, so DDS traffic doesn't collide with other ROS 2 machines on the network.
+- The container runs `--privileged` for `/dev` access, which you need when
   attaching real hardware over USB later.
 - The VNC password is the literal string `password`, baked into the image. That is
-  fine for a local simulator on `localhost`; change it in the `Dockerfile` before
+  fine for a local simulator on `localhost`. Change it in the `Dockerfile` before
   exposing port 5901 anywhere else.
